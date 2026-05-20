@@ -774,6 +774,68 @@
             margin-bottom: 4px;
             font-style: normal;
         }
+        /* ===== PIN MODAL ===== */
+        .pin-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,215,0,0.5);
+            background: transparent;
+            transition: all 0.15s ease;
+        }
+
+        .pin-dot.filled {
+            background: var(--gold);
+            border-color: var(--gold);
+            transform: scale(1.1);
+        }
+
+        .pin-dot.error {
+            border-color: #EF5350;
+            background: #EF5350;
+        }
+
+        .pin-key {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,215,0,0.25);
+            color: var(--cream);
+            font-size: 1.3em;
+            font-family: 'Georgia', serif;
+            padding: 16px 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .pin-key:active {
+            background: rgba(255,215,0,0.25);
+            transform: scale(0.93);
+        }
+
+        .pin-key-clear {
+            font-size: 0.85em;
+            color: rgba(255,248,231,0.5);
+            border-color: rgba(255,255,255,0.1);
+        }
+
+        .pin-key-del {
+            font-size: 1.1em;
+            color: rgba(255,248,231,0.7);
+        }
+
+        @keyframes pin-shake {
+            0%, 100% { transform: translateX(0); }
+            20%       { transform: translateX(-8px); }
+            40%       { transform: translateX(8px); }
+            60%       { transform: translateX(-5px); }
+            80%       { transform: translateX(5px); }
+        }
+
+        .pin-shake {
+            animation: pin-shake 0.4s ease;
+        }
+
     </style>
 </head>
 <body>
@@ -798,8 +860,8 @@
         🗺️ Begin the Hunt!
     </button>
 
-    <button class="btn btn-outline btn-sm mt-10" onclick="showAdminScreen()">
-        ⚙️ Admin Setup
+    <button class="btn btn-outline btn-sm mt-10" onclick="promptAdminPin()">
+    ⚙️ Admin Setup
     </button>
 </div>
 
@@ -1123,6 +1185,92 @@ function showAdminScreen() {
     buildAdminUI();
     showScreen('screen-admin');
 }
+
+// ============================================================
+//  ADMIN PIN LOCK
+// ============================================================
+
+const ADMIN_PIN = '1234'; // 🔒 Change this to your PIN
+let currentPin = '';
+
+function promptAdminPin() {
+    currentPin = '';
+    updatePinDots();
+    document.getElementById('pin-error').textContent = '';
+    document.getElementById('admin-pin-modal').style.display = 'flex';
+}
+
+function closePinModal() {
+    currentPin = '';
+    updatePinDots();
+    document.getElementById('admin-pin-modal').style.display = 'none';
+}
+
+function pinPress(digit) {
+    if (currentPin.length >= 4) return;
+
+    currentPin += digit;
+    updatePinDots();
+
+    if (currentPin.length === 4) {
+        setTimeout(checkPin, 150);
+    }
+}
+
+function pinDelete() {
+    currentPin = currentPin.slice(0, -1);
+    updatePinDots();
+    document.getElementById('pin-error').textContent = '';
+}
+
+function pinClear() {
+    currentPin = '';
+    updatePinDots();
+    document.getElementById('pin-error').textContent = '';
+}
+
+function updatePinDots() {
+    for (let i = 0; i < 4; i++) {
+        const dot = document.getElementById(`pin-dot-${i}`);
+        dot.classList.toggle('filled', i < currentPin.length);
+        dot.classList.remove('error');
+    }
+}
+
+function checkPin() {
+    if (currentPin === ADMIN_PIN) {
+        closePinModal();
+        showAdminScreen();
+    } else {
+        const dotsDisplay = document.getElementById('pin-dots-display');
+        dotsDisplay.classList.remove('pin-shake');
+
+        for (let i = 0; i < 4; i++) {
+            document.getElementById(`pin-dot-${i}`).classList.add('error');
+        }
+
+        void dotsDisplay.offsetWidth;
+        dotsDisplay.classList.add('pin-shake');
+
+        document.getElementById('pin-error').textContent = '❌ Incorrect PIN. Try again.';
+
+        setTimeout(() => {
+            currentPin = '';
+            updatePinDots();
+        }, 600);
+    }
+}
+
+document.addEventListener('keydown', function(e) {
+    const modalVisible =
+        document.getElementById('admin-pin-modal').style.display === 'flex';
+
+    if (modalVisible) {
+        if (e.key >= '0' && e.key <= '9') pinPress(e.key);
+        if (e.key === 'Backspace') pinDelete();
+        if (e.key === 'Escape') closePinModal();
+    }
+});
 
 function buildAdminUI() {
     const container = document.getElementById('admin-scroll-content');
@@ -1604,6 +1752,93 @@ document.addEventListener('keydown', function(e) {
     }
 });
 </script>
+
+<!-- ===== ADMIN PIN MODAL ===== -->
+<div id="admin-pin-modal" style="
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 20000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+">
+    <div style="
+        background: linear-gradient(160deg, #1A1A2E, #16213E);
+        border: 2px solid var(--gold);
+        border-radius: 20px;
+        padding: 32px 24px;
+        width: 100%;
+        max-width: 340px;
+        text-align: center;
+        animation: fadeIn 0.3s ease;
+    ">
+        <!-- Icon -->
+        <div style="font-size:48px; margin-bottom:8px;">🔐</div>
+
+        <!-- Title -->
+        <h2 style="color:var(--gold); margin-bottom:6px; font-size:1.3em;">Admin Access</h2>
+        <p style="color:rgba(255,248,231,0.6); font-size:0.85em; margin-bottom:24px;">
+            Enter the admin PIN to continue
+        </p>
+
+        <!-- PIN dots display -->
+        <div id="pin-dots-display" style="
+            display: flex;
+            justify-content: center;
+            gap: 14px;
+            margin-bottom: 24px;
+        ">
+            <div class="pin-dot" id="pin-dot-0"></div>
+            <div class="pin-dot" id="pin-dot-1"></div>
+            <div class="pin-dot" id="pin-dot-2"></div>
+            <div class="pin-dot" id="pin-dot-3"></div>
+        </div>
+
+        <!-- Number pad -->
+        <div style="
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        ">
+            <button class="pin-key" onclick="pinPress('1')">1</button>
+            <button class="pin-key" onclick="pinPress('2')">2</button>
+            <button class="pin-key" onclick="pinPress('3')">3</button>
+            <button class="pin-key" onclick="pinPress('4')">4</button>
+            <button class="pin-key" onclick="pinPress('5')">5</button>
+            <button class="pin-key" onclick="pinPress('6')">6</button>
+            <button class="pin-key" onclick="pinPress('7')">7</button>
+            <button class="pin-key" onclick="pinPress('8')">8</button>
+            <button class="pin-key" onclick="pinPress('9')">9</button>
+            <button class="pin-key pin-key-clear" onclick="pinClear()">✕ Clear</button>
+            <button class="pin-key" onclick="pinPress('0')">0</button>
+            <button class="pin-key pin-key-del" onclick="pinDelete()">⌫</button>
+        </div>
+
+        <!-- Error message -->
+        <div id="pin-error" style="
+            color: #EF9A9A;
+            font-size: 0.85em;
+            min-height: 20px;
+            margin-bottom: 12px;
+        "></div>
+
+        <!-- Cancel -->
+        <button onclick="closePinModal()" style="
+            background: transparent;
+            border: 1px solid rgba(255,215,0,0.3);
+            color: rgba(255,248,231,0.5);
+            padding: 8px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Georgia', serif;
+            font-size: 0.9em;
+            transition: all 0.2s;
+        ">Cancel</button>
+    </div>
+</div>
 
 </body>
 </html>
