@@ -1,0 +1,1651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Treasure Hunt 🗺️</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        :root {
+            --gold: #FFD700;
+            --dark-gold: #B8860B;
+            --brown: #3E1F00;
+            --light-brown: #7B3F00;
+            --cream: #FFF8E7;
+            --green: #2E7D32;
+            --red: #C62828;
+            --blue: #1565C0;
+        }
+        body {
+            font-family: 'Georgia', serif;
+            background: var(--brown);
+            min-height: 100vh;
+            color: var(--cream);
+            overflow-x: hidden;
+        }
+        .screen {
+            display: none;
+            min-height: 100vh;
+            padding: 20px;
+            animation: fadeIn 0.4s ease;
+        }
+        .screen.active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        #screen-welcome {
+            justify-content: center;
+            text-align: center;
+            background: linear-gradient(160deg, #3E1F00 0%, #7B3F00 50%, #3E1F00 100%);
+        }
+        .compass-icon {
+            font-size: 80px;
+            margin-bottom: 10px;
+            animation: spin-slow 10s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .app-title {
+            font-size: 2.4em;
+            color: var(--gold);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+        }
+        .app-subtitle {
+            font-size: 1em;
+            color: #D4A017;
+            margin-bottom: 40px;
+            font-style: italic;
+        }
+        .team-setup {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid var(--gold);
+            border-radius: 16px;
+            padding: 24px;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 20px;
+        }
+        .team-setup h3 {
+            color: var(--gold);
+            margin-bottom: 16px;
+            font-size: 1.1em;
+            text-align: center;
+        }
+        label {
+            display: block;
+            font-size: 0.85em;
+            color: #D4A017;
+            margin-bottom: 5px;
+            margin-top: 12px;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 2px solid rgba(255,215,0,0.4);
+            background: rgba(0,0,0,0.3);
+            color: var(--cream);
+            font-size: 1em;
+            font-family: 'Georgia', serif;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus, input[type="number"]:focus {
+            border-color: var(--gold);
+        }
+        input::placeholder {
+            color: rgba(255,248,231,0.4);
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 28px;
+            border-radius: 12px;
+            border: none;
+            font-family: 'Georgia', serif;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            min-width: 160px;
+            letter-spacing: 1px;
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn-gold {
+            background: linear-gradient(135deg, var(--gold), var(--dark-gold));
+            color: var(--brown);
+            box-shadow: 0 4px 15px rgba(255,215,0,0.3);
+        }
+        .btn-gold:hover {
+            box-shadow: 0 6px 20px rgba(255,215,0,0.5);
+        }
+        .btn-green {
+            background: linear-gradient(135deg, #43A047, var(--green));
+            color: white;
+            box-shadow: 0 4px 15px rgba(46,125,50,0.4);
+        }
+        .btn-blue {
+            background: linear-gradient(135deg, #1976D2, var(--blue));
+            color: white;
+            box-shadow: 0 4px 15px rgba(21,101,192,0.4);
+            width: 100%;
+            max-width: 400px;
+            padding: 16px;
+            font-size: 1.05em;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--gold);
+            color: var(--gold);
+        }
+        .btn-sm {
+            padding: 10px 20px;
+            font-size: 0.9em;
+            min-width: 120px;
+        }
+        #screen-hunt {
+            background: linear-gradient(160deg, #2C1400 0%, #5C2D00 100%);
+            justify-content: flex-start;
+        }
+        .hunt-header {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            margin-bottom: 16px;
+            border-bottom: 1px solid rgba(255,215,0,0.3);
+        }
+        .team-name-display {
+            font-size: 0.95em;
+            color: var(--gold);
+        }
+        .timer-display {
+            font-size: 1.1em;
+            color: var(--gold);
+            font-variant-numeric: tabular-nums;
+            background: rgba(0,0,0,0.3);
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,215,0,0.3);
+        }
+        .progress-container {
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 20px;
+        }
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+            color: #D4A017;
+            margin-bottom: 6px;
+        }
+        .progress-bar-bg {
+            width: 100%;
+            height: 10px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(255,215,0,0.2);
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--dark-gold), var(--gold));
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+        .progress-dots {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            padding: 0 2px;
+        }
+        .progress-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,215,0,0.4);
+            background: rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            color: rgba(255,248,231,0.5);
+            transition: all 0.3s;
+        }
+        .progress-dot.completed {
+            background: var(--gold);
+            border-color: var(--gold);
+            color: var(--brown);
+        }
+        .progress-dot.current {
+            background: rgba(255,215,0,0.2);
+            border-color: var(--gold);
+            color: var(--gold);
+            box-shadow: 0 0 8px rgba(255,215,0,0.5);
+        }
+        .clue-card {
+            width: 100%;
+            max-width: 500px;
+            background: rgba(0,0,0,0.35);
+            border: 2px solid rgba(255,215,0,0.4);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .clue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .clue-badge {
+            background: linear-gradient(135deg, var(--dark-gold), var(--gold));
+            color: var(--brown);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        .clue-points-badge {
+            font-size: 0.8em;
+            color: var(--gold);
+            background: rgba(255,215,0,0.1);
+            border: 1px solid rgba(255,215,0,0.3);
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+        .clue-text {
+            font-size: 1.05em;
+            line-height: 1.6;
+            color: var(--cream);
+            font-style: italic;
+        }
+        .tries-container {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .tries-label {
+            font-size: 0.8em;
+            color: #D4A017;
+            white-space: nowrap;
+        }
+        .try-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,215,0,0.5);
+            background: rgba(0,0,0,0.3);
+            transition: all 0.3s;
+        }
+        .try-dot.used {
+            background: var(--red);
+            border-color: var(--red);
+        }
+        .guess-area {
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 14px;
+        }
+        .guess-input-row {
+            display: flex;
+            gap: 10px;
+        }
+        .guess-input-row input { flex: 1; }
+        .btn-guess {
+            background: linear-gradient(135deg, var(--gold), var(--dark-gold));
+            color: var(--brown);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-family: 'Georgia', serif;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .btn-guess:active { transform: scale(0.95); }
+        .btn-guess:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .feedback {
+            width: 100%;
+            max-width: 500px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 0.95em;
+            margin-bottom: 14px;
+            text-align: center;
+            display: none;
+            animation: shake 0.3s ease;
+        }
+        .feedback.show { display: block; }
+        .feedback.wrong {
+            background: rgba(198,40,40,0.25);
+            border: 1px solid rgba(198,40,40,0.6);
+            color: #EF9A9A;
+        }
+        .feedback.correct {
+            background: rgba(46,125,50,0.25);
+            border: 1px solid rgba(46,125,50,0.6);
+            color: #A5D6A7;
+        }
+        .feedback.info {
+            background: rgba(21,101,192,0.25);
+            border: 1px solid rgba(21,101,192,0.5);
+            color: #90CAF9;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+        #screen-location {
+            background: linear-gradient(160deg, #1B5E20 0%, #2E7D32 100%);
+            justify-content: center;
+            text-align: center;
+        }
+        .location-reveal-icon {
+            font-size: 70px;
+            margin-bottom: 10px;
+            animation: bounce 1s ease infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .location-reveal-title {
+            font-size: 1.5em;
+            color: var(--gold);
+            margin-bottom: 8px;
+        }
+        .location-name-big {
+            font-size: 2em;
+            color: white;
+            margin-bottom: 8px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+        }
+        .location-description {
+            font-size: 0.95em;
+            color: rgba(255,255,255,0.85);
+            margin-bottom: 24px;
+            line-height: 1.5;
+            max-width: 400px;
+        }
+        .points-earned {
+            background: rgba(255,215,0,0.15);
+            border: 2px solid var(--gold);
+            border-radius: 16px;
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            max-width: 400px;
+            width: 100%;
+        }
+        .points-earned-label {
+            font-size: 0.85em;
+            color: #D4A017;
+            margin-bottom: 4px;
+        }
+        .points-earned-value {
+            font-size: 2em;
+            color: var(--gold);
+            font-weight: bold;
+        }
+        #screen-gps {
+            background: linear-gradient(160deg, #0D2137 0%, #1565C0 100%);
+            justify-content: center;
+            text-align: center;
+        }
+        .gps-icon {
+            font-size: 70px;
+            margin-bottom: 16px;
+        }
+        .pulse {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+        }
+        .gps-title {
+            font-size: 1.4em;
+            color: #90CAF9;
+            margin-bottom: 8px;
+        }
+        .gps-destination {
+            font-size: 1.8em;
+            color: white;
+            margin-bottom: 16px;
+        }
+        .gps-status {
+            font-size: 0.9em;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+        .distance-display {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 12px;
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            width: 100%;
+            max-width: 400px;
+        }
+        .distance-label {
+            font-size: 0.8em;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 4px;
+        }
+        .distance-value {
+            font-size: 1.8em;
+            color: #90CAF9;
+        }
+        .gps-hint {
+            font-size: 0.8em;
+            color: rgba(255,255,255,0.5);
+            font-style: italic;
+        }
+        #screen-final {
+            background: linear-gradient(160deg, #3E1F00 0%, var(--dark-gold) 50%, #3E1F00 100%);
+            justify-content: center;
+            text-align: center;
+        }
+        .trophy-icon {
+            font-size: 90px;
+            margin-bottom: 10px;
+            animation: trophy-bounce 1.5s ease infinite;
+        }
+        @keyframes trophy-bounce {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.1) rotate(-5deg); }
+            75% { transform: scale(1.1) rotate(5deg); }
+        }
+        .final-title {
+            font-size: 2em;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin-bottom: 4px;
+        }
+        .final-subtitle {
+            font-size: 1em;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 24px;
+        }
+        .final-score-card {
+            background: rgba(0,0,0,0.3);
+            border: 2px solid var(--gold);
+            border-radius: 20px;
+            padding: 24px;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 20px;
+        }
+        .score-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,215,0,0.2);
+            font-size: 0.95em;
+        }
+        .score-row:last-child { border-bottom: none; }
+        .score-label { color: rgba(255,255,255,0.7); }
+        .score-value { color: var(--gold); font-weight: bold; }
+        .total-score {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 2px solid var(--gold);
+            text-align: center;
+        }
+        .total-score-label {
+            font-size: 0.9em;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 4px;
+        }
+        .total-score-value {
+            font-size: 3em;
+            color: var(--gold);
+            text-shadow: 0 0 20px rgba(255,215,0,0.5);
+        }
+        #screen-admin {
+            background: linear-gradient(160deg, #1A1A2E 0%, #16213E 100%);
+            justify-content: flex-start;
+        }
+        .admin-header {
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255,215,0,0.3);
+        }
+        .admin-title {
+            font-size: 1.5em;
+            color: var(--gold);
+        }
+        .location-editor {
+            width: 100%;
+            max-width: 600px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,215,0,0.3);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .location-editor-title {
+            font-size: 1em;
+            color: var(--gold);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 2px solid rgba(255,215,0,0.3);
+            background: rgba(0,0,0,0.3);
+            color: var(--cream);
+            font-size: 0.9em;
+            font-family: 'Georgia', serif;
+            outline: none;
+            resize: vertical;
+            min-height: 80px;
+            transition: border-color 0.2s;
+        }
+        textarea:focus { border-color: var(--gold); }
+        .coord-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .bypass-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px dashed rgba(255,255,255,0.3);
+            color: rgba(255,255,255,0.5);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.8em;
+            cursor: pointer;
+            margin-top: 10px;
+            font-family: 'Georgia', serif;
+        }
+        .mt-10 { margin-top: 10px; }
+        .mt-20 { margin-top: 20px; }
+        .text-gold { color: var(--gold); }
+        .text-center { text-align: center; }
+        .w-full { width: 100%; max-width: 500px; }
+        #confetti-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 999;
+        }
+        .scroll-content {
+            width: 100%;
+            max-width: 600px;
+            overflow-y: auto;
+            padding-bottom: 30px;
+        }
+        .additional-clues {
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 14px;
+        }
+        .revealed-clue {
+            background: rgba(0,0,0,0.25);
+            border-left: 3px solid rgba(255,215,0,0.5);
+            padding: 10px 14px;
+            margin-bottom: 8px;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.9em;
+            color: rgba(255,248,231,0.8);
+            font-style: italic;
+        }
+        .revealed-clue-label {
+            font-size: 0.75em;
+            color: rgba(255,215,0,0.6);
+            margin-bottom: 4px;
+            font-style: normal;
+        }
+        /* ===== PIN MODAL ===== */
+        .pin-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,215,0,0.5);
+            background: transparent;
+            transition: all 0.15s ease;
+        }
+        .pin-dot.filled {
+            background: var(--gold);
+            border-color: var(--gold);
+            transform: scale(1.1);
+        }
+        .pin-dot.error {
+            border-color: #EF5350;
+            background: #EF5350;
+        }
+        .pin-key {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,215,0,0.25);
+            color: var(--cream);
+            font-size: 1.3em;
+            font-family: 'Georgia', serif;
+            padding: 16px 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .pin-key:active {
+            background: rgba(255,215,0,0.25);
+            transform: scale(0.93);
+        }
+        .pin-key-clear {
+            font-size: 0.85em;
+            color: rgba(255,248,231,0.5);
+            border-color: rgba(255,255,255,0.1);
+        }
+        .pin-key-del {
+            font-size: 1.1em;
+            color: rgba(255,248,231,0.7);
+        }
+        @keyframes pin-shake {
+            0%, 100% { transform: translateX(0); }
+            20%       { transform: translateX(-8px); }
+            40%       { transform: translateX(8px); }
+            60%       { transform: translateX(-5px); }
+            80%       { transform: translateX(5px); }
+        }
+        .pin-shake {
+            animation: pin-shake 0.4s ease;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+
+<!-- ===== WELCOME SCREEN ===== -->
+<div id="screen-welcome" class="screen active">
+    <div class="compass-icon">🧭</div>
+    <h1 class="app-title">TREASURE HUNT</h1>
+    <p class="app-subtitle">Follow the clues. Find the treasure.</p>
+    <div class="team-setup">
+        <h3>⚔️ Enter Your Team Details</h3>
+        <label>Team Name</label>
+        <input type="text" id="input-team-name" placeholder="e.g. The Adventurers" maxlength="30">
+        <label>Number of Players</label>
+        <input type="number" id="input-team-size" placeholder="e.g. 4" min="1" max="20">
+        <div style="
+            margin-top:16px;
+            padding:10px 14px;
+            background:rgba(255,215,0,0.08);
+            border:1px solid rgba(255,215,0,0.25);
+            border-radius:10px;
+            font-size:0.8em;
+            color:rgba(255,248,231,0.7);
+            line-height:1.5;
+        ">
+            📍 <strong style="color:var(--gold)">Location access required.</strong><br>
+            When prompted, please tap <em>"Allow"</em> so the app can detect when you reach each location.
+        </div>
+    </div>
+    <button class="btn btn-gold" onclick="startHunt()">
+        🗺️ Begin the Hunt!
+    </button>
+    <button class="btn btn-outline btn-sm mt-10" onclick="promptAdminPin()">
+        ⚙️ Admin Setup
+    </button>
+</div>
+
+<!-- ===== HUNT SCREEN ===== -->
+<div id="screen-hunt" class="screen">
+    <div class="hunt-header">
+        <div class="team-name-display">⚔️ <span id="display-team-name">Team</span></div>
+        <div class="timer-display" id="timer-display">00:00:00</div>
+    </div>
+    <div class="progress-container">
+        <div class="progress-label">
+            <span>Progress</span>
+            <span id="progress-text">Location 1 of 4</span>
+        </div>
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progress-bar" style="width: 0%"></div>
+        </div>
+        <div class="progress-dots" id="progress-dots"></div>
+    </div>
+    <div class="clue-card" id="clue-card">
+        <div class="clue-header">
+            <div class="clue-badge" id="clue-badge">CLUE 1</div>
+            <div class="clue-points-badge" id="clue-points">⭐ 300 pts</div>
+        </div>
+        <p class="clue-text" id="clue-text">Loading clue...</p>
+    </div>
+    <div class="additional-clues" id="additional-clues"></div>
+    <div class="tries-container">
+        <span class="tries-label">Attempts:</span>
+        <div id="tries-dots"></div>
+    </div>
+    <div class="guess-area">
+        <div class="guess-input-row">
+            <input type="text" id="guess-input" placeholder="Type location name..." maxlength="60"
+                   onkeypress="if(event.key==='Enter') submitGuess()">
+            <button class="btn-guess" id="guess-btn" onclick="submitGuess()">Guess →</button>
+        </div>
+    </div>
+    <div class="feedback" id="feedback-msg"></div>
+    <div style="font-size:0.85em; color:#D4A017; text-align:center; margin-top:4px;">
+        🏅 Total Points: <strong id="running-points" style="color:var(--gold)">0</strong>
+    </div>
+</div>
+
+<!-- ===== LOCATION REVEALED SCREEN ===== -->
+<div id="screen-location" class="screen">
+    <div class="location-reveal-icon" id="location-reveal-icon">📍</div>
+    <p class="location-reveal-title" id="location-reveal-title">You found it!</p>
+    <h2 class="location-name-big" id="location-name-big">Location Name</h2>
+    <p class="location-description" id="location-description">Description here.</p>
+    <div class="points-earned">
+        <div class="points-earned-label">Points earned for this location</div>
+        <div class="points-earned-value" id="points-earned-value">+300 pts</div>
+    </div>
+    <a id="maps-link" href="#" target="_blank" class="btn btn-blue" style="margin-bottom:16px;">
+        🗺️ Open in Maps — Navigate Here
+    </a>
+    <p style="font-size:0.85em; color:rgba(255,255,255,0.6); margin-bottom:20px; font-style:italic;">
+        Make your way to this location.<br>The next clue unlocks when you arrive!
+    </p>
+    <div id="final-location-btn" style="display:none">
+        <button class="btn btn-gold" onclick="showFinalScreen()">
+            🏆 See Final Score!
+        </button>
+    </div>
+</div>
+
+<!-- ===== GPS WAITING SCREEN ===== -->
+<div id="screen-gps" class="screen">
+    <div class="gps-icon pulse">📡</div>
+    <h2 class="gps-title">Head to the location!</h2>
+    <p class="gps-destination" id="gps-destination-name">Location Name</p>
+    <div class="distance-display">
+        <div class="distance-label">Distance from destination</div>
+        <div class="distance-value" id="distance-value">Calculating...</div>
+    </div>
+    <p class="gps-status" id="gps-status">
+        Waiting for your GPS position...<br>
+        The next clue will unlock automatically when you arrive!
+    </p>
+    <p class="gps-hint">📍 You need to be within 50 metres of the location</p>
+    <button class="bypass-btn" onclick="bypassGPS()">
+        🔧 Dev: Simulate Arrival
+    </button>
+</div>
+
+<!-- ===== FINAL SCREEN ===== -->
+<div id="screen-final" class="screen">
+    <div class="trophy-icon">🏆</div>
+    <h1 class="final-title">Hunt Complete!</h1>
+    <p class="final-subtitle" id="final-team-name">Congratulations, Team!</p>
+    <div class="final-score-card">
+        <div class="score-row">
+            <span class="score-label">📍 Locations Found</span>
+            <span class="score-value">4 / 4</span>
+        </div>
+        <div class="score-row">
+            <span class="score-label">⏱️ Total Time</span>
+            <span class="score-value" id="final-time">--:--:--</span>
+        </div>
+        <div class="score-row">
+            <span class="score-label">🗝️ Clues Used</span>
+            <span class="score-value" id="final-clues-used">-</span>
+        </div>
+        <div class="score-row">
+            <span class="score-label">⭐ Location Points</span>
+            <span class="score-value" id="final-location-points">-</span>
+        </div>
+        <div class="score-row">
+            <span class="score-label">⚡ Speed Bonus</span>
+            <span class="score-value" id="final-speed-bonus">-</span>
+        </div>
+        <div class="total-score">
+            <div class="total-score-label">FINAL SCORE</div>
+            <div class="total-score-value" id="final-total-score">0</div>
+        </div>
+    </div>
+    <button class="btn btn-outline mt-10" onclick="restartHunt()">
+        🔄 Play Again
+    </button>
+</div>
+
+<!-- ===== ADMIN SCREEN ===== -->
+<div id="screen-admin" class="screen">
+    <div class="admin-header">
+        <h2 class="admin-title">⚙️ Admin — Hunt Setup</h2>
+        <p style="font-size:0.85em; color:rgba(255,215,0,0.6); margin-top:4px;">Configure your 4 locations</p>
+    </div>
+    <div class="scroll-content" id="admin-scroll-content"></div>
+    <div style="width:100%; max-width:600px; display:flex; gap:12px; padding-bottom:20px; flex-wrap:wrap;">
+        <button class="btn btn-gold" style="flex:1" onclick="saveAdminSettings()">💾 Save Settings</button>
+        <button class="btn btn-outline" style="flex:1" onclick="showScreen('screen-welcome')">← Back</button>
+        <button class="btn btn-outline" style="flex:1; border-color:#EF5350; color:#EF5350;" onclick="resetToDefaults()">
+            🗑️ Reset to Defaults
+        </button>
+    </div>
+</div>
+
+<!-- ===== ADMIN PIN MODAL ===== -->
+<div id="admin-pin-modal" style="
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 20000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+">
+    <div style="
+        background: linear-gradient(160deg, #1A1A2E, #16213E);
+        border: 2px solid var(--gold);
+        border-radius: 20px;
+        padding: 32px 24px;
+        width: 100%;
+        max-width: 340px;
+        text-align: center;
+        animation: fadeIn 0.3s ease;
+    ">
+        <div style="font-size:48px; margin-bottom:8px;">🔐</div>
+        <h2 style="color:var(--gold); margin-bottom:6px; font-size:1.3em;">Admin Access</h2>
+        <p style="color:rgba(255,248,231,0.6); font-size:0.85em; margin-bottom:24px;">
+            Enter the admin PIN to continue
+        </p>
+        <div id="pin-dots-display" style="
+            display: flex;
+            justify-content: center;
+            gap: 14px;
+            margin-bottom: 24px;
+        ">
+            <div class="pin-dot" id="pin-dot-0"></div>
+            <div class="pin-dot" id="pin-dot-1"></div>
+            <div class="pin-dot" id="pin-dot-2"></div>
+            <div class="pin-dot" id="pin-dot-3"></div>
+        </div>
+        <div style="
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        ">
+            <button class="pin-key" onclick="pinPress('1')">1</button>
+            <button class="pin-key" onclick="pinPress('2')">2</button>
+            <button class="pin-key" onclick="pinPress('3')">3</button>
+            <button class="pin-key" onclick="pinPress('4')">4</button>
+            <button class="pin-key" onclick="pinPress('5')">5</button>
+            <button class="pin-key" onclick="pinPress('6')">6</button>
+            <button class="pin-key" onclick="pinPress('7')">7</button>
+            <button class="pin-key" onclick="pinPress('8')">8</button>
+            <button class="pin-key" onclick="pinPress('9')">9</button>
+            <button class="pin-key pin-key-clear" onclick="pinClear()">✕ Clear</button>
+            <button class="pin-key" onclick="pinPress('0')">0</button>
+            <button class="pin-key pin-key-del" onclick="pinDelete()">⌫</button>
+        </div>
+        <div id="pin-error" style="
+            color: #EF9A9A;
+            font-size: 0.85em;
+            min-height: 20px;
+            margin-bottom: 12px;
+        "></div>
+        <button onclick="closePinModal()" style="
+            background: transparent;
+            border: 1px solid rgba(255,215,0,0.3);
+            color: rgba(255,248,231,0.5);
+            padding: 8px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Georgia', serif;
+            font-size: 0.9em;
+        ">Cancel</button>
+    </div>
+</div>
+
+<script>
+// ============================================================
+//  GAME DATA
+// ============================================================
+const DEFAULT_HUNT_DATA = {
+    locations: [
+        {
+            id: 1,
+            name: "Rosa-Luxemburg-Platz",
+            description: "Rosa Luxemburg was a towering figure of the classical socialist movement — a brilliant thinker, sharp-tongued rhetorician, and trailblazing leader of the proletarian revolution. Although the obstacles to her pursuing her aims in life were legion, she rose to become one of the paramount leaders of the largest and strongest socialist movement in the world, German Social Democracy.",
+            emoji: "🗽",
+            lat: 52.52677,
+            lng: 13.41103,
+            acceptedNames: ["rosa luxemburg", "rosa luxemburg platz", "rosa-luxemburg-platz"],
+            clues: [
+                "I am a Berlin square that honors a co-founder of the Spartacus League, whose radical anti-war ideas are literally stamped into the concrete beneath your feet.",
+                "I am a public square named after a fiery Marxist philosopher and activist who was brutally assassinated and thrown into the Landwehr Canal in 1919.",
+                "I am a Berlin square and subway station named directly after Rosa."
+            ]
+        },
+        {
+            id: 2,
+            name: "Die Frauen der Rosenstraße",
+            description: "The Denkmal Rosenstraße centres on the non-Jewish wives who launched the only successful mass protest against the Holocaust. In 1943, these courageous women stood in the freezing cold for days, defying armed SS guards to demand the release of their arrested Jewish husbands. Created by female sculptor Ingeborg Hunzinger, the pink sandstone monument purposefully reflects themes of grief, sisterhood, and protective love rather than traditional military triumph.",
+            emoji: "💪",
+            lat: 52.5212,
+            lng: 13.40486,
+            acceptedNames: ["denkmal rosenstrasse", "block of women", "rosenstrasse", "rosenstraße", "die frauen der rosenstrasse", "die frauen der rosenstraße"],
+            clues: [
+                "Sculpted in red stone near an old advertising column, I show grief and embraces to celebrate a rare triumph of civil courage over a brutal dictatorship.",
+                "I am a Berlin memorial honoring the brave wives who stood in the freezing winter of 1943 to successfully demand the release of their Jewish husbands from the Gestapo.",
+                "My name means Rose Street, and I am the famous Berlin spot where a peaceful protest defeated Nazi orders."
+            ]
+        },
+        {
+            id: 3,
+            name: "She Said Bookstore",
+            description: "She Said is an independent, intersectional feminist bookstore and café located on Kottbusser Damm in Berlin-Neukölln. The shop subverts the traditional literary canon by exclusively stocking, selling, and promoting books written by women, queer, BIPOC, and non-binary authors. It serves as a vibrant, inclusive community hub that hosts regular book clubs, political readings, and panel discussions.",
+            emoji: "📚",
+            lat: 52.49145,
+            lng: 13.42332,
+            acceptedNames: ["she said", "she said bookstore", "she said books"],
+            clues: [
+                "I am a Berlin literary space that subverts the traditional canon by exclusively stacking shelves with queer, BIPOC, and feminist perspectives.",
+                "I am a Neukölln bookshop and café that centers intersectionality by exclusively selling works by female and non-binary authors.",
+                "I am a Berlin feminist bookstore whose very name begins with a female pronoun to tell you exactly who is speaking from our shelves."
+            ]
+        },
+        {
+            id: 4,
+            name: "SO36",
+            description: "SO36 is a legendary, independent cultural venue and club located on Oranienstraße in Berlin-Kreuzberg. Originally a birthplace of the late-1970s German punk rock movement, it has evolved into a premier hub for intersectional activism, radical leftist politics, and queer-feminist nightlife.",
+            emoji: "🎸",
+            lat: 52.50039,
+            lng: 13.4221,
+            acceptedNames: ["so36", "so 36"],
+            clues: [
+                "I am a historic Kreuzberg hall where punk rock met radical leftist politics, serving as a birthplace for Berlin's migrant-led anti-racist movements.",
+                "I am a legendary venue that anchors Berlin's queer-feminist nightlife, famous for breaking barriers with my iconic Gayhane Turkish-gay club nights.",
+                "Located on Oranienstraße, my name comes from an old postal code and I am Berlin's most famous punk and queer-friendly event hall."
+            ]
+        }
+    ]
+};
+
+// ============================================================
+//  LOAD / SAVE HUNT DATA
+// ============================================================
+function loadHuntData() {
+    const saved = localStorage.getItem('treasureHuntData');
+    if (saved) {
+        try {
+            return JSON.parse(saved);
+        } catch(e) {
+            console.warn('Saved data corrupted, loading defaults.');
+            return JSON.parse(JSON.stringify(DEFAULT_HUNT_DATA));
+        }
+    }
+    return JSON.parse(JSON.stringify(DEFAULT_HUNT_DATA));
+}
+
+let huntData = loadHuntData();
+
+// ============================================================
+//  GAME STATE
+// ============================================================
+let gameState = {
+    teamName: "Adventurers",
+    teamSize: 1,
+    currentLocationIndex: 0,
+    currentClueIndex: 0,
+    triesThisClue: 0,
+    totalPoints: 0,
+    locationPoints: [],
+    cluesUsedPerLocation: [],
+    startTime: null,
+    timerInterval: null,
+    gpsWatchId: null,
+    elapsedSeconds: 0,
+    huntStarted: false
+};
+
+const MAX_TRIES_PER_CLUE = 4;
+const POINTS_PER_CLUE = [300, 200, 100, 50];
+const GPS_THRESHOLD_METERS = 50;
+
+// ============================================================
+//  SCREEN MANAGEMENT
+// ============================================================
+function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+    window.scrollTo(0, 0);
+}
+
+// ============================================================
+//  WELCOME & RESTART
+// ============================================================
+function startHunt() {
+    const nameInput = document.getElementById('input-team-name').value.trim();
+    const sizeInput = parseInt(document.getElementById('input-team-size').value) || 1;
+
+    if (!nameInput) {
+        alert("Please enter a team name!");
+        return;
+    }
+
+    gameState.teamName = nameInput;
+    gameState.teamSize = sizeInput;
+    gameState.currentLocationIndex = 0;
+    gameState.currentClueIndex = 0;
+    gameState.triesThisClue = 0;
+    gameState.totalPoints = 0;
+    gameState.locationPoints = [];
+    gameState.cluesUsedPerLocation = [];
+    gameState.elapsedSeconds = 0;
+    gameState.startTime = Date.now();
+    gameState.huntStarted = true;
+
+    if (gameState.timerInterval) clearInterval(gameState.timerInterval);
+    gameState.timerInterval = setInterval(updateTimer, 1000);
+
+    document.getElementById('display-team-name').textContent = gameState.teamName;
+
+    initProgressDots();
+    loadLocation(0);
+    showScreen('screen-hunt');
+}
+
+function restartHunt() {
+    if (gameState.timerInterval) clearInterval(gameState.timerInterval);
+    if (gameState.gpsWatchId) navigator.geolocation.clearWatch(gameState.gpsWatchId);
+    showScreen('screen-welcome');
+}
+
+// ============================================================
+//  ADMIN SCREEN
+// ============================================================
+function showAdminScreen() {
+    buildAdminUI();
+    showScreen('screen-admin');
+}
+
+function buildAdminUI() {
+    const container = document.getElementById('admin-scroll-content');
+    container.innerHTML = '';
+    huntData.locations.forEach((loc, idx) => {
+        const div = document.createElement('div');
+        div.className = 'location-editor';
+        div.innerHTML = `
+            <div class="location-editor-title">
+                <span>${loc.emoji || '📍'}</span>
+                <span>Location ${idx + 1}</span>
+            </div>
+            <label>Location Name (official answer)</label>
+            <input type="text" id="admin-name-${idx}" value="${loc.name}" placeholder="Location name">
+            <label>Emoji</label>
+            <input type="text" id="admin-emoji-${idx}" value="${loc.emoji || '📍'}" placeholder="Emoji" maxlength="4" style="width:80px">
+            <label>Accepted Answer Variations (comma-separated)</label>
+            <input type="text" id="admin-accepted-${idx}" value="${loc.acceptedNames.join(', ')}" placeholder="name, alias, shortname">
+            <label>Description (shown when found)</label>
+            <textarea id="admin-desc-${idx}" rows="2">${loc.description}</textarea>
+            <label>GPS Coordinates</label>
+            <div class="coord-row">
+                <div>
+                    <label>Latitude</label>
+                    <input type="text" id="admin-lat-${idx}" value="${loc.lat}" placeholder="e.g. 52.5200">
+                </div>
+                <div>
+                    <label>Longitude</label>
+                    <input type="text" id="admin-lng-${idx}" value="${loc.lng}" placeholder="e.g. 13.4050">
+                </div>
+            </div>
+            <label>Clue 1 (hardest — 300 pts)</label>
+            <textarea id="admin-clue1-${idx}" rows="3">${loc.clues[0]}</textarea>
+            <label>Clue 2 (medium — 200 pts)</label>
+            <textarea id="admin-clue2-${idx}" rows="3">${loc.clues[1]}</textarea>
+            <label>Clue 3 (easiest — 100 pts)</label>
+            <textarea id="admin-clue3-${idx}" rows="3">${loc.clues[2]}</textarea>
+        `;
+        container.appendChild(div);
+    });
+}
+
+function saveAdminSettings() {
+    huntData.locations.forEach((loc, idx) => {
+        loc.name        = document.getElementById('admin-name-'     + idx).value.trim() || loc.name;
+        loc.emoji       = document.getElementById('admin-emoji-'    + idx).value.trim() || '📍';
+        loc.description = document.getElementById('admin-desc-'     + idx).value.trim() || loc.description;
+        loc.lat         = parseFloat(document.getElementById('admin-lat-' + idx).value)  || loc.lat;
+        loc.lng         = parseFloat(document.getElementById('admin-lng-' + idx).value)  || loc.lng;
+        loc.clues[0]    = document.getElementById('admin-clue1-'    + idx).value.trim() || loc.clues[0];
+        loc.clues[1]    = document.getElementById('admin-clue2-'    + idx).value.trim() || loc.clues[1];
+        loc.clues[2]    = document.getElementById('admin-clue3-'    + idx).value.trim() || loc.clues[2];
+
+        const accepted  = document.getElementById('admin-accepted-' + idx).value;
+        loc.acceptedNames = accepted.split(',').map(s => s.trim().toLowerCase()).filter(s => s);
+    });
+
+    localStorage.setItem('treasureHuntData', JSON.stringify(huntData));
+    showFeedbackToast("✅ Settings saved!");
+    setTimeout(() => showScreen('screen-welcome'), 1000);
+}
+
+function resetToDefaults() {
+    if (!confirm('This will delete all saved settings and restore the defaults. Are you sure?')) return;
+    localStorage.removeItem('treasureHuntData');
+    huntData = JSON.parse(JSON.stringify(DEFAULT_HUNT_DATA));
+    buildAdminUI();
+    showFeedbackToast('🗑️ Reset to defaults');
+}
+
+function showFeedbackToast(msg) {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position:fixed; bottom:30px; left:50%; transform:translateX(-50%);
+        background:rgba(46,125,50,0.9); color:white; padding:12px 24px;
+        border-radius:10px; font-size:0.95em; z-index:9999;
+        animation:fadeIn 0.3s ease;
+    `;
+    toast.textContent = msg;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2000);
+}
+
+// ============================================================
+//  ADMIN PIN LOCK
+// ============================================================
+const ADMIN_PIN = '1234'; // 🔒 Change this before deploying!
+let currentPin = '';
+
+function promptAdminPin() {
+    currentPin = '';
+    updatePinDots();
+    document.getElementById('pin-error').textContent = '';
+    document.getElementById('admin-pin-modal').style.display = 'flex';
+}
+
+function closePinModal() {
+    currentPin = '';
+    updatePinDots();
+    document.getElementById('admin-pin-modal').style.display = 'none';
+}
+
+function pinPress(digit) {
+    if (currentPin.length >= 4) return;
+    currentPin += digit;
+    updatePinDots();
+    if (currentPin.length === 4) {
+        setTimeout(checkPin, 150);
+    }
+}
+
+function pinDelete() {
+    currentPin = currentPin.slice(0, -1);
+    updatePinDots();
+    document.getElementById('pin-error').textContent = '';
+}
+
+function pinClear() {
+    currentPin = '';
+    updatePinDots();
+    document.getElementById('pin-error').textContent = '';
+}
+
+function updatePinDots() {
+    for (let i = 0; i < 4; i++) {
+        const dot = document.getElementById('pin-dot-' + i);
+        dot.classList.toggle('filled', i < currentPin.length);
+        dot.classList.remove('error');
+    }
+}
+
+function checkPin() {
+    if (currentPin === ADMIN_PIN) {
+        closePinModal();
+        showAdminScreen();
+    } else {
+        const dotsDisplay = document.getElementById('pin-dots-display');
+        dotsDisplay.classList.remove('pin-shake');
+        for (let i = 0; i < 4; i++) {
+            document.getElementById('pin-dot-' + i).classList.add('error');
+        }
+        void dotsDisplay.offsetWidth; // force reflow
+        dotsDisplay.classList.add('pin-shake');
+        document.getElementById('pin-error').textContent = '❌ Incorrect PIN. Try again.';
+        setTimeout(() => {
+            currentPin = '';
+            updatePinDots();
+        }, 600);
+    }
+}
+
+// ============================================================
+//  TIMER
+// ============================================================
+function updateTimer() {
+    if (!gameState.startTime) return;
+    gameState.elapsedSeconds = Math.floor((Date.now() - gameState.startTime) / 1000);
+    document.getElementById('timer-display').textContent = formatTime(gameState.elapsedSeconds);
+}
+
+function formatTime(seconds) {
+    const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+    const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return h + ':' + m + ':' + s;
+}
+
+// ============================================================
+//  PROGRESS DOTS
+// ============================================================
+function initProgressDots() {
+    const container = document.getElementById('progress-dots');
+    container.innerHTML = '';
+    huntData.locations.forEach((loc, i) => {
+        const dot = document.createElement('div');
+        dot.className = 'progress-dot' + (i === 0 ? ' current' : '');
+        dot.id = 'dot-' + i;
+        dot.textContent = loc.emoji || (i + 1);
+        container.appendChild(dot);
+    });
+}
+
+function updateProgress() {
+    const total = huntData.locations.length;
+    const completed = gameState.currentLocationIndex;
+    const pct = (completed / total) * 100;
+
+    document.getElementById('progress-bar').style.width = pct + '%';
+    document.getElementById('progress-text').textContent =
+        'Location ' + (completed + 1) + ' of ' + total;
+
+    for (let i = 0; i < total; i++) {
+        const dot = document.getElementById('dot-' + i);
+        if (!dot) continue;
+        dot.className = 'progress-dot';
+        if (i < completed) dot.classList.add('completed');
+        else if (i === completed) dot.classList.add('current');
+    }
+}
+
+// ============================================================
+//  LOAD LOCATION / CLUE
+// ============================================================
+function loadLocation(locationIdx) {
+    gameState.currentLocationIndex = locationIdx;
+    gameState.currentClueIndex = 0;
+    gameState.triesThisClue = 0;
+
+    updateProgress();
+    renderClue();
+    clearFeedback();
+    document.getElementById('guess-input').value = '';
+    document.getElementById('guess-btn').disabled = false;
+    document.getElementById('additional-clues').innerHTML = '';
+}
+
+function renderClue() {
+    const loc = huntData.locations[gameState.currentLocationIndex];
+    const clueIdx = gameState.currentClueIndex;
+    const pts = POINTS_PER_CLUE[clueIdx] || 50;
+
+    document.getElementById('clue-badge').textContent = 'CLUE ' + (clueIdx + 1);
+    document.getElementById('clue-points').textContent = '⭐ ' + pts + ' pts';
+    document.getElementById('clue-text').textContent = loc.clues[clueIdx];
+    renderTries();
+}
+
+function renderTries() {
+    const container = document.getElementById('tries-dots');
+    container.innerHTML = '';
+    for (let i = 0; i < MAX_TRIES_PER_CLUE; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'try-dot' + (i < gameState.triesThisClue ? ' used' : '');
+        container.appendChild(dot);
+    }
+}
+
+// ============================================================
+//  GUESSING LOGIC
+// ============================================================
+function submitGuess() {
+    const input = document.getElementById('guess-input').value.trim().toLowerCase();
+    if (!input) return;
+
+    const loc = huntData.locations[gameState.currentLocationIndex];
+    const isCorrect = checkAnswer(input, loc);
+
+    if (isCorrect) {
+        handleCorrectGuess();
+    } else {
+        handleWrongGuess();
+    }
+}
+
+function checkAnswer(input, loc) {
+    const normalised = input.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+    const targets = [loc.name.toLowerCase(), ...loc.acceptedNames];
+    return targets.some(function(t) {
+        const normT = t.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+        return normT === normalised || normT.includes(normalised) || normalised.includes(normT);
+    });
+}
+
+function handleCorrectGuess() {
+    const pts = POINTS_PER_CLUE[gameState.currentClueIndex] || 50;
+    gameState.totalPoints += pts;
+    gameState.locationPoints.push(pts);
+    gameState.cluesUsedPerLocation.push(gameState.currentClueIndex + 1);
+
+    document.getElementById('running-points').textContent = gameState.totalPoints;
+    showFeedback('✅ Correct! Well done!', 'correct');
+
+    setTimeout(function() {
+        showLocationRevealed(pts);
+    }, 900);
+}
+
+function handleWrongGuess() {
+    gameState.triesThisClue++;
+    document.getElementById('guess-input').value = '';
+
+    if (gameState.triesThisClue >= MAX_TRIES_PER_CLUE) {
+        const loc = huntData.locations[gameState.currentLocationIndex];
+        const nextClueIdx = gameState.currentClueIndex + 1;
+
+        if (nextClueIdx < loc.clues.length) {
+            addRevealedClue(gameState.currentClueIndex);
+            gameState.currentClueIndex = nextClueIdx;
+            gameState.triesThisClue = 0;
+            renderClue();
+            showFeedback('❌ Not quite. Here is a new clue!', 'info');
+        } else {
+            showFeedback('🔓 Location revealed! Time to go there.', 'info');
+            gameState.locationPoints.push(0);
+            gameState.cluesUsedPerLocation.push(loc.clues.length);
+            document.getElementById('guess-btn').disabled = true;
+            setTimeout(function() {
+                showLocationRevealed(0);
+            }, 1200);
+        }
+    } else {
+        const remaining = MAX_TRIES_PER_CLUE - gameState.triesThisClue;
+        showFeedback('❌ Not right. ' + remaining + ' attempt' + (remaining > 1 ? 's' : '') + ' left on this clue.', 'wrong');
+    }
+
+    renderTries();
+}
+
+function addRevealedClue(clueIdx) {
+    const loc = huntData.locations[gameState.currentLocationIndex];
+    const container = document.getElementById('additional-clues');
+    const div = document.createElement('div');
+    div.className = 'revealed-clue';
+    div.innerHTML = '<div class="revealed-clue-label">Clue ' + (clueIdx + 1) + ' (used)</div>' + loc.clues[clueIdx];
+    container.appendChild(div);
+}
+
+function showFeedback(msg, type) {
+    const el = document.getElementById('feedback-msg');
+    el.textContent = msg;
+    el.className = 'feedback ' + type + ' show';
+}
+
+function clearFeedback() {
+    document.getElementById('feedback-msg').className = 'feedback';
+}
+
+// ============================================================
+//  LOCATION REVEALED SCREEN
+// ============================================================
+function showLocationRevealed(pts) {
+    const locIdx = gameState.currentLocationIndex;
+    const loc = huntData.locations[locIdx];
+    const isLast = locIdx === huntData.locations.length - 1;
+
+    document.getElementById('location-reveal-icon').textContent = loc.emoji || '📍';
+    document.getElementById('location-reveal-title').textContent =
+        isLast ? '🏆 Final Location!' : '📍 Location ' + (locIdx + 1) + ' Found!';
+    document.getElementById('location-name-big').textContent = loc.name;
+    document.getElementById('location-description').textContent = loc.description;
+    document.getElementById('points-earned-value').textContent =
+        pts > 0 ? '+' + pts + ' pts' : 'Location revealed (0 pts)';
+
+    const mapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + loc.lat + ',' + loc.lng + '&travelmode=walking';
+    document.getElementById('maps-link').href = mapsUrl;
+
+    if (isLast) {
+        document.getElementById('final-location-btn').style.display = 'block';
+        document.getElementById('maps-link').style.display = 'none';
+    } else {
+        document.getElementById('final-location-btn').style.display = 'none';
+        document.getElementById('maps-link').style.display = 'flex';
+    }
+
+    launchConfetti();
+    showScreen('screen-location');
+
+    if (!isLast) {
+        document.getElementById('maps-link').onclick = function() {
+            setTimeout(function() {
+                startGPSWait(locIdx + 1);
+            }, 800);
+        };
+    }
+}
+
+// ============================================================
+//  GPS WAITING
+// ============================================================
+function startGPSWait(nextLocIdx) {
+    const nextLoc = huntData.locations[nextLocIdx];
+    document.getElementById('gps-destination-name').textContent = nextLoc.name + ' (approx.)';
+    document.getElementById('distance-value').textContent = 'Calculating...';
+    document.getElementById('gps-status').textContent =
+        'Waiting for your GPS position... The next clue will unlock when you arrive!';
+
+    showScreen('screen-gps');
+
+    if (gameState.gpsWatchId) navigator.geolocation.clearWatch(gameState.gpsWatchId);
+
+    if ('geolocation' in navigator) {
+        gameState.gpsWatchId = navigator.geolocation.watchPosition(
+            function(position) { onGPSUpdate(position, nextLoc, nextLocIdx); },
+            function() {
+                document.getElementById('gps-status').textContent =
+                    '⚠️ GPS unavailable. Please enable location services.';
+                document.getElementById('distance-value').textContent = 'GPS Error';
+            },
+            { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+        );
+    } else {
+        document.getElementById('gps-status').textContent = '⚠️ GPS not supported on this device.';
+    }
+}
+
+function onGPSUpdate(position, targetLoc, nextLocIdx) {
+    const dist = getDistanceMeters(
+        position.coords.latitude,
+        position.coords.longitude,
+        targetLoc.lat,
+        targetLoc.lng
+    );
+
+    const distEl = document.getElementById('distance-value');
+    distEl.textContent = dist > 1000
+        ? (dist / 1000).toFixed(1) + ' km'
+        : Math.round(dist) + ' m';
+
+    document.getElementById('gps-status').textContent = dist <= GPS_THRESHOLD_METERS
+        ? '✅ You are here! Loading next clue...'
+        : 'Keep going! You need to be within ' + GPS_THRESHOLD_METERS + 'm. Current distance: ' + Math.round(dist) + 'm';
+
+    if (dist <= GPS_THRESHOLD_METERS) {
+        navigator.geolocation.clearWatch(gameState.gpsWatchId);
+        setTimeout(function() {
+            loadLocation(nextLocIdx);
+            showScreen('screen-hunt');
+        }, 1000);
+    }
+}
+
+function getDistanceMeters(lat1, lon1, lat2, lon2) {
+    const R = 6371000;
+    const p1 = lat1 * Math.PI / 180;
+    const p2 = lat2 * Math.PI / 180;
+    const dp = (lat2 - lat1) * Math.PI / 180;
+    const dl = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dp/2) * Math.sin(dp/2) +
+              Math.cos(p1) * Math.cos(p2) * Math.sin(dl/2) * Math.sin(dl/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function bypassGPS() {
+    const nextLocIdx = gameState.currentLocationIndex + 1;
+    if (gameState.gpsWatchId) navigator.geolocation.clearWatch(gameState.gpsWatchId);
+    if (nextLocIdx < huntData.locations.length) {
+        loadLocation(nextLocIdx);
+        showScreen('screen-hunt');
+    }
+}
+
+// ============================================================
+//  FINAL SCREEN
+// ============================================================
+function showFinalScreen() {
+    if (gameState.timerInterval) clearInterval(gameState.timerInterval);
+
+    const elapsed = gameState.elapsedSeconds;
+    const locPoints = gameState.locationPoints.reduce(function(a, b) { return a + b; }, 0);
+    const cluesUsed = gameState.cluesUsedPerLocation.reduce(function(a, b) { return a + b; }, 0);
+
+    const maxTime = 120 * 60;
+    const goodTime = 30 * 60;
+    let speedBonus = 0;
+    if (elapsed <= goodTime) {
+        speedBonus = 500;
+    } else if (elapsed < maxTime) {
+        speedBonus = Math.round(500 * (1 - (elapsed - goodTime) / (maxTime - goodTime)));
+    }
+
+    const totalScore = locPoints + speedBonus;
+
+    document.getElementById('final-team-name').textContent = 'Congratulations, ' + gameState.teamName + '!';
+    document.getElementById('final-time').textContent = formatTime(elapsed);
+    document.getElementById('final-clues-used').textContent = cluesUsed + ' / ' + (huntData.locations.length * 3);
+    document.getElementById('final-location-points').textContent = locPoints + ' pts';
+    document.getElementById('final-speed-bonus').textContent = '+' + speedBonus + ' pts';
+    document.getElementById('final-total-score').textContent = totalScore;
+
+    launchConfetti();
+    showScreen('screen-final');
+}
+
+// ============================================================
+//  CONFETTI
+// ============================================================
+function launchConfetti() {
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const pieces = [];
+    const colors = ['#FFD700','#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFEAA7','#DDA0DD'];
+
+    for (let i = 0; i < 120; i++) {
+        pieces.push({
+            x: Math.random() * canvas.width,
+            y: -20 - Math.random() * 100,
+            w: 8 + Math.random() * 8,
+            h: 12 + Math.random() * 8,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            speed: 3 + Math.random() * 4,
+            drift: (Math.random() - 0.5) * 2,
+            rotation: Math.random() * 360,
+            rotationSpeed: (Math.random() - 0.5) * 5,
+            opacity: 1
+        });
+    }
+
+    let frame = 0;
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        frame++;
+        let alive = false;
+        pieces.forEach(function(p) {
+            p.y += p.speed;
+            p.x += p.drift;
+            p.rotation += p.rotationSpeed;
+            if (p.y > canvas.height * 0.7) p.opacity -= 0.02;
+            if (p.opacity > 0) {
+                alive = true;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rotation * Math.PI / 180);
+                ctx.globalAlpha = Math.max(0, p.opacity);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+                ctx.restore();
+            }
+        });
+        if (alive && frame < 300) requestAnimationFrame(animate);
+        else ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    animate();
+}
+
+// ============================================================
+//  KEYBOARD HANDLING
+// ============================================================
+document.addEventListener('keydown', function(e) {
+    const pinVisible = document.getElementById('admin-pin-modal').style.display === 'flex';
+
+    if (pinVisible) {
+        if (e.key >= '0' && e.key <= '9') pinPress(e.key);
+        if (e.key === 'Backspace') pinDelete();
+        if (e.key === 'Escape') closePinModal();
+        return;
+    }
+
+    if (e.key === 'Enter' && document.getElementById('screen-hunt').classList.contains('active')) {
+        submitGuess();
+    }
+});
+</script>
+</body>
+</html>
